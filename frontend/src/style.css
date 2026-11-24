@@ -1,0 +1,81 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  color: #20242a;
+  background: #f6f7f8;
+  font: 16px/1.45 system-ui, sans-serif;
+}
+
+main { max-width: 1200px; margin: auto; padding: 24px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+h1, h2 { margin: 0; line-height: 1.2; }
+h1 { font-size: 28px; }
+h2 { margin-bottom: 10px; font-size: 22px; }
+.sources, .count, .specialty { color: #4d5965; }
+.sources { margin: 8px 0 20px; }
+
+button, input, select {
+  color: inherit;
+  background: #fff;
+  border: 1px solid #a9b3bd;
+  border-radius: 4px;
+  font: inherit;
+  padding: 7px 11px;
+}
+
+button { cursor: pointer; }
+button:disabled { cursor: wait; opacity: .6; }
+:focus-visible { outline: 2px solid #205c9c; outline-offset: 2px; }
+
+.filters, .layout {
+  display: grid;
+  grid-template-columns: minmax(270px, 1fr) minmax(0, 1.8fr);
+  gap: 16px;
+}
+
+.filters { align-items: end; margin-bottom: 16px; }
+label { display: grid; gap: 4px; }
+.filters select { width: fit-content; max-width: 100%; }
+.count { margin: 0 0 8px; font-size: 14px; }
+.list {
+  margin: 0;
+  padding: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid #d2d8de;
+  border-radius: 4px;
+}
+
+.list li + li { border-top: 1px solid #d2d8de; }
+.list button { display: block; width: 100%; border: 0; border-radius: 0; text-align: left; }
+.list button:hover { background: #f2f6fb; }
+.list button[aria-pressed="true"] { background: #e8f0fa; box-shadow: inset 3px 0 #205c9c; }
+.list button:focus-visible { outline-offset: -3px; }
+.specialty { display: block; font-size: 14px; margin: 2px 0 4px; }
+
+.status { display: inline-block; background: #eef0f2; padding: 2px 7px; border-radius: 3px; font-size: 13px; }
+.status.matched { background: #e0f2e7; color: #166039; }
+.status.possible { background: #fff0c8; color: #704800; }
+.details { align-self: start; padding: 16px; border: 1px solid #d2d8de; border-radius: 4px; background: #fff; }
+.candidate { margin-top: 12px; }
+.candidate select { width: 100%; }
+.reason, .notice { padding: 9px 12px; background: #fff2d4; margin: 12px 0; }
+.error { background: #fbe6e6; color: #8b2020; }
+
+.table-wrap { margin-top: 14px; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; text-align: left; }
+th, td { padding: 8px; border-bottom: 1px solid #d2d8de; vertical-align: top; }
+tbody th { font-weight: 500; }
+thead { background: #f0f2f4; }
+td { width: 37%; overflow-wrap: anywhere; }
+.different { background: #fff2d4; }
+.different small { display: block; color: #704800; }
+
+@media (max-width: 700px) {
+  main { padding: 14px; }
+  .filters, .layout { grid-template-columns: 1fr; }
+  .list { max-height: 28vh; }
+  th, td { font-size: 14px; padding: 6px; }
+}
