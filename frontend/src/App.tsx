@@ -112,12 +112,13 @@ export function App() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<Status | "">("");
   const [selectedId, setSelectedId] = useState("");
+  const [refreshes, setRefreshes] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchReport(false, controller.signal)
+    fetchReport(refreshes > 0, controller.signal)
       .then((data) => {
         if (!controller.signal.aborted) setReport(data);
       })
@@ -128,7 +129,13 @@ export function App() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, []);
+  }, [refreshes]);
+
+  function refresh() {
+    setError("");
+    setLoading(true);
+    setRefreshes((count) => count + 1);
+  }
 
   const rows = filterRows(report?.rows ?? [], status, query);
   const selected = rows.find((row) => row.id === selectedId) ?? rows[0];
@@ -137,6 +144,7 @@ export function App() {
     <main>
       <header>
         <h1>Сверка врачей</h1>
+        <button type="button" onClick={refresh} disabled={loading}>Обновить</button>
       </header>
       {report && (
         <p className="sources">
@@ -146,12 +154,12 @@ export function App() {
       )}
       {loading && (
         <p role="status" className="notice">
-          Загружаем данные из двух источников…
+          {report ? "Обновляем данные источников…" : "Загружаем данные из двух источников…"}
         </p>
       )}
       {error && (
         <p role="alert" className="notice error">
-          {error}
+          {error}{report && " На странице результаты предыдущей загрузки."}
         </p>
       )}
       {report && (

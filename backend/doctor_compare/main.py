@@ -9,10 +9,15 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import PROJECT_ROOT, Settings
 from .matching import compare
-from .models import Report
+from .models import ErrorResponse, Report
 from .sources import SourceError, load_catalog, load_medical
 
 CACHE_SECONDS = 60
+SOURCE_ERRORS = {
+    502: {"model": ErrorResponse, "description": "Источник вернул ошибку или неожиданные данные"},
+    503: {"model": ErrorResponse, "description": "На сервере не задан ключ Medical API"},
+    504: {"model": ErrorResponse, "description": "Источник не ответил вовремя"},
+}
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -27,7 +32,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             app.state.http = client
             yield
 
-    app = FastAPI(title="Сверка врачей", lifespan=lifespan, docs_url="/api/docs")
+    app = FastAPI(
+        title="Сверка врачей",
+        description="Сравнение до 200 записей Medical API с первыми тремя страницами HTML-каталога.",
+        lifespan=lifespan,
+        docs_url="/api/docs",
+        redoc_url="/api/redoc",
+        openapi_url="/api/openapi.json",
+    )
 
     @app.exception_handler(SourceError)
     async def source_error(_request: Request, error: SourceError) -> JSONResponse:
@@ -42,6 +54,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         previous = report
         async with lock:
+            # Параллельный запрос мог уже обновить отчёт, пока этот ждал блокировку.
             if report is not None and (
                 report is not previous or (not refresh and monotonic() - updated_at < CACHE_SECONDS)
             ):
@@ -70,10 +83,25 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             updated_at = monotonic()
             return report
 
-    @app.get("/api/comparison", response_model=Report)
+    @app.get(
+        "/api/comparison", response_model=Report, responses=SOURCE_ERRORS,
+        summary="Получить отчёт сверки",
+        description="Возвращает отчёт из кэша на срок до минуты или загружает оба источника.",
+        tags=["Сверка"],
+    )
     async def comparison(request: Request, response: Response) -> Report:
         response.headers["Cache-Control"] = "no-store"
         return await get_report(request.app.state.http, refresh=False)
+
+    @app.post(
+        "/api/comparison/refresh", response_model=Report, responses=SOURCE_ERRORS,
+        summary="Обновить отчёт сверки",
+        description="Запрашивает оба источника и сохраняет отчёт после успешной загрузки.",
+        tags=["Сверка"],
+    )
+    async def refresh_comparison(request: Request, response: Response) -> Report:
+        response.headers["Cache-Control"] = "no-store"
+        return await get_report(request.app.state.http, refresh=True)
 
     dist = PROJECT_ROOT / "frontend" / "dist"
     if (dist / "index.html").is_file():
